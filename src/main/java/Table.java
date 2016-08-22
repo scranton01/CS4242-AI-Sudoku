@@ -1,8 +1,10 @@
+import lombok.Data;
+import lombok.Value;
+
 import java.util.List;
 
-/**
- * Created by Jun on 8/18/2016.
- */
+
+@Data
 public class Table {
     List<List<GridNumber>> table;
 

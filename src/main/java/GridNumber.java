@@ -1,7 +1,7 @@
-/**
- * Created by Jun on 8/18/2016.
- */
+import lombok.Data;
 
+
+@Data
 public class GridNumber {
     int fixed;
     int candidate;
