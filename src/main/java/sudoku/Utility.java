@@ -46,6 +46,6 @@ class Utility {
         Set<Integer> set = new HashSet<>();
         return fixedList.stream().allMatch(t -> set.add(t));
     }
-    static boolean isSolved(Table table){
-    }
+//    static boolean isSolved(Table table){
+//    }
 }
