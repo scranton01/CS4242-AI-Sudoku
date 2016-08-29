@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 class Utility {
-    static Table readTableCsv (String csvFile){
+    static Table readTableCsv(String csvFile) {
         Table table = new Table();
         try (CSVReader reader = new CSVReader(new FileReader(csvFile))) {
             String[] nextLine;
@@ -32,6 +32,7 @@ class Utility {
         }
         return table;
     }
+
     static boolean tableIsCorrect(Table table) {
         return IntStream.range(0, 9).allMatch(row -> containsUnique(table.getRow(row))) &&
                 IntStream.range(0, 9).allMatch(column -> containsUnique(table.getColumn(column))) &&
@@ -46,6 +47,12 @@ class Utility {
         Set<Integer> set = new HashSet<>();
         return fixedList.stream().allMatch(t -> set.add(t));
     }
-//    static boolean isSolved(Table table){
-//    }
+
+    static boolean isSolved(Table table) {
+        return table.getTable().stream()
+                .flatMap(num -> num.stream())
+                .map(GridNumber::getFixed)
+                .noneMatch(i -> i == 0) &&
+                tableIsCorrect(table);
+    }
 }

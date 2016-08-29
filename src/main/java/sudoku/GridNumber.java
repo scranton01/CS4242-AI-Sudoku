@@ -23,6 +23,7 @@ public class GridNumber {
         this.columnPos = column;
     }
 
+    @Override
     public String toString(){
         if(fixed == 0){
             return "[ ]";
