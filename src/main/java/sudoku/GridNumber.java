@@ -1,10 +1,14 @@
-import lombok.Data;
+package sudoku;
+
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 
 
-@Data
+@Getter
+@Setter
 public class GridNumber {
     int fixed;
     List<Integer> candidates;
