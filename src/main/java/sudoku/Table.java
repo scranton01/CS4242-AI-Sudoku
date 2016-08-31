@@ -5,6 +5,10 @@ import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static sudoku.Utility.containsUnique;
+import static sudoku.Utility.getBoxNumberBy;
 
 @Data
 public class Table {
@@ -18,12 +22,12 @@ public class Table {
         return table.get(i).get(j).toString();
     }
 
-    GridNumber get(int i, int j) {
-        return table.get(i).get(j);
+    GridNumber get(int row, int column) {
+        return table.get(row).get(column);
     }
 
-    List<GridNumber> getRow(int i) {
-        return table.get(i);
+    List<GridNumber> getRow(int row) {
+        return table.get(row);
     }
 
     List<GridNumber> getColumn(int j) {
@@ -32,8 +36,8 @@ public class Table {
                 .collect(Collectors.toList());
     }
 
-    List<GridNumber> getBox(int k) {
-        switch (k) {
+    List<GridNumber> getBox(int box) {
+        switch (box) {
             case 0:
                 return table.stream().flatMap(num -> num.stream()
                         .filter(i -> 0 <= i.getRowPos() && i.getRowPos() <= 2 && 0 <= i.getColumnPos() && i.getColumnPos() <= 2))
@@ -90,7 +94,6 @@ public class Table {
         printRow(6);
         printRow(7);
         printRow(8);
-
     }
 
     void printRow(int i) {
@@ -99,11 +102,38 @@ public class Table {
                 numToString(i, 6) + numToString(i, 7) + numToString(i, 8));
     }
 
-//    Boolean solvePuzzle() {
-//        do {
-//            for (int i = 0; i < 9; i++) {
-//
-//            }
-//        }while(table.stream().flatMap(num -> num.stream().anyMatch(i -> i.getFixed()==0)));
+    boolean isCorrect() {
+        return IntStream.range(0, 9).allMatch(row -> containsUnique(getRow(row))) &&
+                IntStream.range(0, 9).allMatch(column -> containsUnique(getColumn(column))) &&
+                IntStream.range(0, 9).allMatch(box -> containsUnique(getBox(box)));
+    }
+
+    boolean isSolved() {
+        return table.stream()
+                .flatMap(num -> num.stream())
+                .map(GridNumber::getFixed)
+                .noneMatch(i -> i == 0) &&
+                isCorrect();
+    }
+
+//    boolean isOnlyCandidate(int var, int row, int column){
+//        get(row, column);
 //    }
+
+    void solvePuzzle() {
+        for (int i = 0; i < 9; i++) {
+            for (int row = 0; row < 9; row++) {
+                for (int column = 0; column < 9; column++) {
+                    if (getRow(row).stream().map(num -> num.getFixed()).noneMatch(fixed -> fixed == i) &&
+                            getColumn(column).stream().map(num -> num.getFixed()).noneMatch(fixed -> fixed == i) &&
+                            getBox(getBoxNumberBy(row,column)).stream().map(num -> num.getFixed()).noneMatch(fixed -> fixed == i)) {
+                        System.out.println("");
+                    }
+                }
+            }
+        }
+//    while(!isSolved()){
+//
+//    }
+    }
 }
