@@ -32,12 +32,6 @@ class Utility {
         return table;
     }
 
-//    static boolean tableIsCorrect(Table table) {
-//        return IntStream.range(0, 9).allMatch(row -> containsUnique(table.getRow(row))) &&
-//                IntStream.range(0, 9).allMatch(column -> containsUnique(table.getColumn(column))) &&
-//                IntStream.range(0, 9).allMatch(box -> containsUnique(table.getBox(box)));
-//    }
-
     static boolean containsUnique(List<GridNumber> list) {
         List<Integer> fixedList = list.stream()
                 .filter(i -> i.getFixed() != 0)
@@ -47,32 +41,27 @@ class Utility {
         return fixedList.stream().allMatch(t -> set.add(t));
     }
 
-//    static boolean isSolved(Table table) {
-//        return table.getTable().stream()
-//                .flatMap(num -> num.stream())
-//                .map(GridNumber::getFixed)
-//                .noneMatch(i -> i == 0) &&
-//                tableIsCorrect(table);
-//    }
-
     static boolean isOnlyCandidate(int candidate, int row, int column, Table table) {
-       List<Integer> list = table.getRow(row).stream().map(num -> num.getCandidates()).flatMap(i -> i.stream()).collect(Collectors.toList());
-        return table.getRow(row).stream()
+        Table newTable = table;
+        newTable.get(row, column).getCandidates().clear();
+        return newTable.getRow(row).stream()
                 .map(num -> num.getCandidates())
                 .flatMap(i -> i.stream())
                 .noneMatch(i -> i == candidate) ||
 
-                table.getColumn(column).stream()
+                newTable.getColumn(column).stream()
                         .map(num -> num.getCandidates())
                         .flatMap(i -> i.stream())
                         .noneMatch(i -> i == candidate) ||
 
-                table.getBox(getBoxNumberBy(row, column)).stream()
+                newTable.getBox(getBoxNumberBy(row, column)).stream()
                         .map(num -> num.getCandidates())
                         .flatMap(i -> i.stream())
                         .noneMatch(i -> i == candidate);
     }
-    static int getBoxNumberBy(int row, int column){
-        return row/3*3 + column/3;
+
+    static int getBoxNumberBy(int row, int column) {
+        return row / 3 * 3 + column / 3;
     }
+
 }

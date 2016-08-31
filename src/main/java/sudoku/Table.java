@@ -4,11 +4,13 @@ import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static sudoku.Utility.containsUnique;
 import static sudoku.Utility.getBoxNumberBy;
+import static sudoku.Utility.isOnlyCandidate;
 
 @Data
 public class Table {
@@ -94,6 +96,7 @@ public class Table {
         printRow(6);
         printRow(7);
         printRow(8);
+        System.out.println("===============================");
     }
 
     void printRow(int i) {
@@ -116,24 +119,48 @@ public class Table {
                 isCorrect();
     }
 
-//    boolean isOnlyCandidate(int var, int row, int column){
-//        get(row, column);
-//    }
 
     void solvePuzzle() {
-        for (int i = 0; i < 9; i++) {
-            for (int row = 0; row < 9; row++) {
-                for (int column = 0; column < 9; column++) {
-                    if (getRow(row).stream().map(num -> num.getFixed()).noneMatch(fixed -> fixed == i) &&
-                            getColumn(column).stream().map(num -> num.getFixed()).noneMatch(fixed -> fixed == i) &&
-                            getBox(getBoxNumberBy(row,column)).stream().map(num -> num.getFixed()).noneMatch(fixed -> fixed == i)) {
-                        System.out.println("");
+        AtomicInteger candidate = new AtomicInteger();
+        while (!isSolved()) {
+            candidate.set(1);
+            while (candidate.get() <= 9) {
+                for (int row = 0; row < 9; row++) {
+                    for (int column = 0; column < 9; column++) {
+                        if (get(row, column).getFixed() == 0 &&
+                                getRow(row).stream().map(num -> num.getFixed()).noneMatch(fixed -> fixed == candidate.get()) &&
+                                getColumn(column).stream().map(num -> num.getFixed()).noneMatch(fixed -> fixed == candidate.get()) &&
+                                getBox(getBoxNumberBy(row, column)).stream().map(num -> num.getFixed()).noneMatch(fixed -> fixed == candidate.get())) {
+                            get(row, column).candidates.add(candidate.get());
+                        }
                     }
                 }
+                candidate.getAndIncrement();
             }
+
+            candidate.set(1);
+            A: while (candidate.get() <= 9) {
+                for (int row = 0; row < 9; row++) {
+                    for (int column = 0; column < 9; column++) {
+                        if (get(row, column).getFixed() == 0 &&
+                                get(row, column).getCandidates().contains(candidate.get()) &&
+                                isOnlyCandidate(candidate.get(), row, column, this)) {
+                            get(row, column).setFixed(candidate.get());
+                            printTable();
+                            break A;
+                        }
+                    }
+                }
+                candidate.getAndIncrement();
+            }
+            deleteCandidates();
         }
-//    while(!isSolved()){
+    }
+
+    void deleteCandidates() {
+        table.stream().flatMap(num -> num.stream()).forEach(i -> i.candidates.clear());
+    }
+//    boolean isOnlyLeft(int row, int candidate){
 //
 //    }
-    }
 }
