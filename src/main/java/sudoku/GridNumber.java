@@ -1,12 +1,14 @@
 package sudoku;
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
-
+/**
+ * CS4242 Artificial Inteligence
+ * @Date 8/31/2016
+ * @Author Jun Nguyen
+ */
 
 @Data
 public class GridNumber {

@@ -8,16 +8,35 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static sudoku.Utility.containsUnique;
-import static sudoku.Utility.getBoxNumberBy;
-import static sudoku.Utility.isOnlyCandidate;
-
+import static sudoku.Utility.*;
+/**
+ * CS4242 Artificial Inteligence
+ * @Date 8/31/2016
+ * @Author Jun Nguyen
+ */
 @Data
 public class Table {
     List<List<GridNumber>> table;
 
     Table() {
         table = new ArrayList<>();
+    }
+    public static Table deepCopy(Table original){
+        Table table = new Table();
+        for(int rowPos=0 ;rowPos<9;rowPos++){
+            List<GridNumber> row = new ArrayList<>();
+            for(int columnPos=0;columnPos<9;columnPos++){
+                List<Integer> candidates = new ArrayList<>();
+                for(int i =0; i<original.get(rowPos,columnPos).getCandidates().size();i++){
+                    candidates.add(original.get(rowPos,columnPos).getCandidates().get(i));
+                }
+                GridNumber gridNumber = new GridNumber(original.get(rowPos,columnPos).getFixed(),rowPos,columnPos);
+                gridNumber.setCandidates(candidates);
+                row.add(gridNumber);
+            }
+            table.add(row);
+        }
+        return table;
     }
 
     String numToString(int i, int j) {
@@ -144,7 +163,7 @@ public class Table {
                     for (int column = 0; column < 9; column++) {
                         if (get(row, column).getFixed() == 0 &&
                                 get(row, column).getCandidates().contains(candidate.get()) &&
-                                isOnlyCandidate(candidate.get(), row, column, this)) {
+                                isOnlyCandidate(candidate.get(), row, column, this)){
                             get(row, column).setFixed(candidate.get());
                             printTable();
                             break A;
@@ -155,6 +174,7 @@ public class Table {
             }
             deleteCandidates();
         }
+        System.out.println("Table is solved");
     }
 
     void deleteCandidates() {

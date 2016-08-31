@@ -11,6 +11,13 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static sudoku.Table.deepCopy;
+
+/**
+ * CS4242 Artificial Inteligence
+ * @Date 8/31/2016
+ * @Author Jun Nguyen
+ */
 class Utility {
     static Table readTableCsv(String csvFile) {
         Table table = new Table();
@@ -42,7 +49,7 @@ class Utility {
     }
 
     static boolean isOnlyCandidate(int candidate, int row, int column, Table table) {
-        Table newTable = table;
+        Table newTable = deepCopy(table);
         newTable.get(row, column).getCandidates().clear();
         return newTable.getRow(row).stream()
                 .map(num -> num.getCandidates())
