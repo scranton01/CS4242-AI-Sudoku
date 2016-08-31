@@ -1,3 +1,8 @@
+/**
+ * CS4242 Artificial Intelligence
+ * @Date 8/31/2016
+ * @Author Jun Nguyen
+ */
 package sudoku;
 
 import lombok.Data;
@@ -9,11 +14,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static sudoku.Utility.*;
-/**
- * CS4242 Artificial Inteligence
- * @Date 8/31/2016
- * @Author Jun Nguyen
- */
 @Data
 public class Table {
     List<List<GridNumber>> table;
@@ -96,7 +96,7 @@ public class Table {
                         .filter(i -> 6 <= i.getRowPos() && i.getRowPos() <= 8 && 6 <= i.getColumnPos() && i.getColumnPos() <= 8))
                         .collect(Collectors.toList());
         }
-        return null;
+        return new ArrayList<>();
     }
 
     void add(List<GridNumber> row) {
@@ -141,7 +141,10 @@ public class Table {
 
     void solvePuzzle() {
         AtomicInteger candidate = new AtomicInteger();
+        int initialSize;
+
         while (!isSolved()) {
+            initialSize = findFixedSize();
             candidate.set(1);
             while (candidate.get() <= 9) {
                 for (int row = 0; row < 9; row++) {
@@ -173,6 +176,10 @@ public class Table {
                 candidate.getAndIncrement();
             }
             deleteCandidates();
+            if(initialSize==findFixedSize()){
+                System.out.println("Table is unsolvable");
+                return;
+            }
         }
         System.out.println("Table is solved");
     }
@@ -180,7 +187,13 @@ public class Table {
     void deleteCandidates() {
         table.stream().flatMap(num -> num.stream()).forEach(i -> i.candidates.clear());
     }
-//    boolean isOnlyLeft(int row, int candidate){
-//
-//    }
+
+    int findFixedSize(){
+        return table.stream()
+                .flatMap(num -> num.stream())
+                .map(GridNumber::getFixed)
+                .filter(i -> i!=0)
+                .collect(Collectors.toList())
+                .size();
+    }
 }

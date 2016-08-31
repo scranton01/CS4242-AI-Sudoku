@@ -1,3 +1,8 @@
+/**
+ * CS4242 Artificial Intelligence
+ * @Date 8/31/2016
+ * @Author Jun Nguyen
+ */
 package sudoku;
 
 import com.opencsv.CSVReader;
@@ -13,11 +18,7 @@ import java.util.stream.Collectors;
 
 import static sudoku.Table.deepCopy;
 
-/**
- * CS4242 Artificial Inteligence
- * @Date 8/31/2016
- * @Author Jun Nguyen
- */
+
 class Utility {
     static Table readTableCsv(String csvFile) {
         Table table = new Table();
