@@ -7,8 +7,10 @@ package sudoku;
 
 import com.opencsv.CSVReader;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -22,7 +24,8 @@ import static sudoku.Table.deepCopy;
 class Utility {
     static Table readTableCsv(String csvFile) {
         Table table = new Table();
-        try (CSVReader reader = new CSVReader(new FileReader(csvFile))) {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        try (CSVReader reader = new CSVReader(new InputStreamReader(classLoader.getResourceAsStream(csvFile)))) {
             String[] nextLine;
             AtomicInteger rowIndex = new AtomicInteger();
             while ((nextLine = reader.readNext()) != null) {
@@ -38,6 +41,11 @@ class Utility {
             e.printStackTrace();
         }
         return table;
+    }
+
+    private File getFile(String fileName){
+        ClassLoader classLoader = getClass().getClassLoader();
+        return new File(classLoader.getResource(fileName).getFile());
     }
 
     static boolean containsUnique(List<GridNumber> list) {

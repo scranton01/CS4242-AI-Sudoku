@@ -21,6 +21,7 @@ public class Table {
     Table() {
         table = new ArrayList<>();
     }
+
     public static Table deepCopy(Table original){
         Table table = new Table();
         for(int rowPos=0 ;rowPos<9;rowPos++){
@@ -142,6 +143,7 @@ public class Table {
     void solvePuzzle() {
         AtomicInteger candidate = new AtomicInteger();
         int initialSize;
+        AtomicInteger inserted = new AtomicInteger();
 
         while (!isSolved()) {
             initialSize = findFixedSize();
@@ -169,17 +171,18 @@ public class Table {
                                 isOnlyCandidate(candidate.get(), row, column, this)){
                             get(row, column).setFixed(candidate.get());
                             printTable();
+                            System.out.println(inserted.incrementAndGet() + " numbers has been inserted.");
                             break A;
                         }
                     }
                 }
                 candidate.getAndIncrement();
             }
-            deleteCandidates();
             if(initialSize==findFixedSize()){
                 System.out.println("Table is unsolvable");
                 return;
             }
+            deleteCandidates();
         }
         System.out.println("Table is solved");
     }
