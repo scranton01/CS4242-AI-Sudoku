@@ -177,6 +177,7 @@ public class Table {
                                 isOnlyCandidate(candidate.get(), row, column, this)) {
                             get(row, column).setFixed(candidate.get());
                             inserted.incrementAndGet();
+                            printTable();
                             break A;
                         }
                     }
@@ -208,22 +209,36 @@ public class Table {
     }
 
     void updateCandidates() {
-        AtomicInteger candidate = new AtomicInteger(1);
-        while (candidate.get() <= 9) {
-            for (int row = 0; row < 9; row++) {
-                for (int column = 0; column < 9; column++) {
-                    if (get(row, column).getFixed() == 0 ) {
-                        deleteCandidates(candidate.get(), row, column);
+        int initialCandidateSize;
+        int currentCandidateSize;
+        do {
+            initialCandidateSize = findCandidateSize();
+            AtomicInteger candidate = new AtomicInteger(1);
+            while (candidate.get() <= 9) {
+                for (int row = 0; row < 9; row++) {
+                    for (int column = 0; column < 9; column++) {
+                        if (get(row, column).getFixed() == 0) {
+                            deleteCandidates(candidate.get(), row, column);
+                        }
                     }
                 }
+                candidate.getAndIncrement();
             }
-            candidate.getAndIncrement();
-        }
+            currentCandidateSize = findCandidateSize();
+        }while(initialCandidateSize > currentCandidateSize);
+    }
+
+    int findCandidateSize(){
+        return table.stream()
+                .flatMap(num -> num.stream())
+                .map(num -> num.getCandidates())
+                .flatMap(i -> i.stream())
+                .collect(Collectors.toList()).size();
     }
 
     void deleteCandidates(int candidate, int rowPos, int columnPos) {
         List<GridNumber> row = getRow(rowPos);
-        List<GridNumber> column = getColumn(rowPos);
+        List<GridNumber> column = getColumn(columnPos);
         int boxNumber = getBoxNumberBy(rowPos, columnPos);
         List<GridNumber> box = getBox(boxNumber);
 
