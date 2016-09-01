@@ -43,10 +43,6 @@ class Utility {
         return table;
     }
 
-    private File getFile(String fileName){
-        ClassLoader classLoader = getClass().getClassLoader();
-        return new File(classLoader.getResource(fileName).getFile());
-    }
 
     static boolean containsUnique(List<GridNumber> list) {
         List<Integer> fixedList = list.stream()

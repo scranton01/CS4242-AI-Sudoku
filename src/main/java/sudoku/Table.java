@@ -1,5 +1,6 @@
 /**
  * CS4242 Artificial Intelligence
+ *
  * @Date 8/31/2016
  * @Author Jun Nguyen
  */
@@ -8,12 +9,14 @@ package sudoku;
 import lombok.Data;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static sudoku.Utility.*;
+
 @Data
 public class Table {
     List<List<GridNumber>> table;
@@ -22,16 +25,16 @@ public class Table {
         table = new ArrayList<>();
     }
 
-    public static Table deepCopy(Table original){
+    public static Table deepCopy(Table original) {
         Table table = new Table();
-        for(int rowPos=0 ;rowPos<9;rowPos++){
+        for (int rowPos = 0; rowPos < 9; rowPos++) {
             List<GridNumber> row = new ArrayList<>();
-            for(int columnPos=0;columnPos<9;columnPos++){
+            for (int columnPos = 0; columnPos < 9; columnPos++) {
                 List<Integer> candidates = new ArrayList<>();
-                for(int i =0; i<original.get(rowPos,columnPos).getCandidates().size();i++){
-                    candidates.add(original.get(rowPos,columnPos).getCandidates().get(i));
+                for (int i = 0; i < original.get(rowPos, columnPos).getCandidates().size(); i++) {
+                    candidates.add(original.get(rowPos, columnPos).getCandidates().get(i));
                 }
-                GridNumber gridNumber = new GridNumber(original.get(rowPos,columnPos).getFixed(),rowPos,columnPos);
+                GridNumber gridNumber = new GridNumber(original.get(rowPos, columnPos).getFixed(), rowPos, columnPos);
                 gridNumber.setCandidates(candidates);
                 row.add(gridNumber);
             }
@@ -125,7 +128,7 @@ public class Table {
                 numToString(i, 6) + numToString(i, 7) + numToString(i, 8));
     }
 
-    boolean isCorrect() {
+    boolean isValid() {
         return IntStream.range(0, 9).allMatch(row -> containsUnique(getRow(row))) &&
                 IntStream.range(0, 9).allMatch(column -> containsUnique(getColumn(column))) &&
                 IntStream.range(0, 9).allMatch(box -> containsUnique(getBox(box)));
@@ -136,7 +139,7 @@ public class Table {
                 .flatMap(num -> num.stream())
                 .map(GridNumber::getFixed)
                 .noneMatch(i -> i == 0) &&
-                isCorrect();
+                isValid();
     }
 
 
@@ -161,42 +164,517 @@ public class Table {
                 }
                 candidate.getAndIncrement();
             }
+//           added from ver 1.2
+            updateCandidates();
 
             candidate.set(1);
-            A: while (candidate.get() <= 9) {
+            A:
+            while (candidate.get() <= 9) {
                 for (int row = 0; row < 9; row++) {
                     for (int column = 0; column < 9; column++) {
                         if (get(row, column).getFixed() == 0 &&
                                 get(row, column).getCandidates().contains(candidate.get()) &&
-                                isOnlyCandidate(candidate.get(), row, column, this)){
+                                isOnlyCandidate(candidate.get(), row, column, this)) {
                             get(row, column).setFixed(candidate.get());
-                            printTable();
-                            System.out.println(inserted.incrementAndGet() + " numbers has been inserted.");
+                            inserted.incrementAndGet();
                             break A;
                         }
                     }
                 }
                 candidate.getAndIncrement();
             }
-            if(initialSize==findFixedSize()){
+            if (initialSize == findFixedSize()) {
                 System.out.println("Table is unsolvable");
+                System.out.println(inserted.get() + " numbers has been inserted.");
                 return;
             }
             deleteCandidates();
         }
         System.out.println("Table is solved");
+        System.out.println(inserted.get() + " numbers has been inserted.");
     }
 
     void deleteCandidates() {
         table.stream().flatMap(num -> num.stream()).forEach(i -> i.candidates.clear());
     }
 
-    int findFixedSize(){
+    int findFixedSize() {
         return table.stream()
                 .flatMap(num -> num.stream())
                 .map(GridNumber::getFixed)
-                .filter(i -> i!=0)
+                .filter(i -> i != 0)
                 .collect(Collectors.toList())
                 .size();
+    }
+
+    void updateCandidates() {
+        AtomicInteger candidate = new AtomicInteger(1);
+        while (candidate.get() <= 9) {
+            for (int row = 0; row < 9; row++) {
+                for (int column = 0; column < 9; column++) {
+                    if (get(row, column).getFixed() == 0 ) {
+                        deleteCandidates(candidate.get(), row, column);
+                    }
+                }
+            }
+            candidate.getAndIncrement();
+        }
+    }
+
+    void deleteCandidates(int candidate, int rowPos, int columnPos) {
+        List<GridNumber> row = getRow(rowPos);
+        List<GridNumber> column = getColumn(rowPos);
+        int boxNumber = getBoxNumberBy(rowPos, columnPos);
+        List<GridNumber> box = getBox(boxNumber);
+
+        List<Integer> rowList1;
+        List<Integer> rowList2;
+        List<Integer> columnList1;
+        List<Integer> columnList2;
+        List<Integer> boxList;
+
+        switch (boxNumber) {
+            case 0:
+                rowList1 = row.stream()
+                        .filter(num -> num.getColumnPos() < 3)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                rowList2 = row.stream()
+                        .filter(num -> num.getColumnPos() >= 3)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getRowPos() != rowPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(rowList1, candidate) >= 2 &&
+                        !rowList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getRow(rowPos).stream()
+                            .filter(num -> num.getColumnPos() >= 3)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+
+                columnList1 = column.stream()
+                        .filter(num -> num.getRowPos() < 3)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                columnList2 = column.stream()
+                        .filter(num -> num.getRowPos() >= 3)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getColumnPos() != columnPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(columnList1, candidate) >= 2 &&
+                        !columnList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getColumn(columnPos).stream()
+                            .filter(num -> num.getRowPos() >= 3)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+                break;
+            case 1:
+                rowList1 = row.stream()
+                        .filter(num -> num.getColumnPos() >= 3 && num.getColumnPos() < 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                rowList2 = row.stream()
+                        .filter(num -> num.getColumnPos() < 3 && num.getColumnPos() >= 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getRowPos() != rowPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(rowList1, candidate) >= 2 &&
+                        !rowList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getRow(rowPos).stream()
+                            .filter(num -> num.getColumnPos() < 3 && num.getColumnPos() >= 6)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+
+                columnList1 = column.stream()
+                        .filter(num -> num.getRowPos() < 3)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                columnList2 = column.stream()
+                        .filter(num -> num.getRowPos() >= 3)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getColumnPos() != columnPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(columnList1, candidate) >= 2 &&
+                        !columnList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getColumn(columnPos).stream()
+                            .filter(num -> num.getRowPos() >= 3)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+                break;
+            case 2:
+                rowList1 = row.stream()
+                        .filter(num -> num.getColumnPos() >= 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                rowList2 = row.stream()
+                        .filter(num -> num.getColumnPos() < 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getRowPos() != rowPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(rowList1, candidate) >= 2 &&
+                        !rowList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getRow(rowPos).stream()
+                            .filter(num -> num.getColumnPos() < 6)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+
+                columnList1 = column.stream()
+                        .filter(num -> num.getRowPos() < 3)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                columnList2 = column.stream()
+                        .filter(num -> num.getRowPos() >= 3)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getColumnPos() != columnPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(columnList1, candidate) >= 2 &&
+                        !columnList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getColumn(columnPos).stream()
+                            .filter(num -> num.getRowPos() >= 3)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+                break;
+            case 3:
+                rowList1 = row.stream()
+                        .filter(num -> num.getColumnPos() < 3)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                rowList2 = row.stream()
+                        .filter(num -> num.getColumnPos() >= 3)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getRowPos() != rowPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(rowList1, candidate) >= 2 &&
+                        !rowList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getRow(rowPos).stream()
+                            .filter(num -> num.getColumnPos() >= 3)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+
+                columnList1 = column.stream()
+                        .filter(num -> num.getRowPos() >= 3 && num.getRowPos() < 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                columnList2 = column.stream()
+                        .filter(num -> num.getRowPos() < 3 && num.getRowPos() >= 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getColumnPos() != columnPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(columnList1, candidate) >= 2 &&
+                        !columnList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getColumn(columnPos).stream()
+                            .filter(num -> num.getRowPos() < 3 && num.getRowPos() >= 6)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+                break;
+            case 4:
+                rowList1 = row.stream()
+                        .filter(num -> num.getColumnPos() >= 3 && num.getColumnPos() < 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                rowList2 = row.stream()
+                        .filter(num -> num.getColumnPos() < 3 && num.getColumnPos() >= 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getRowPos() != rowPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(rowList1, candidate) >= 2 &&
+                        !rowList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getRow(rowPos).stream()
+                            .filter(num -> num.getColumnPos() < 3 && num.getColumnPos() >= 6)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+
+                columnList1 = column.stream()
+                        .filter(num -> num.getRowPos() >= 3 && num.getRowPos() < 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                columnList2 = column.stream()
+                        .filter(num -> num.getRowPos() < 3 && num.getRowPos() >= 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getColumnPos() != columnPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(columnList1, candidate) >= 2 &&
+                        !columnList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getColumn(columnPos).stream()
+                            .filter(num -> num.getRowPos() < 3 && num.getRowPos() >= 6)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+                break;
+            case 5:
+                rowList1 = row.stream()
+                        .filter(num -> num.getColumnPos() >= 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                rowList2 = row.stream()
+                        .filter(num -> num.getColumnPos() < 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getRowPos() != rowPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(rowList1, candidate) >= 2 &&
+                        !rowList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getRow(rowPos).stream()
+                            .filter(num -> num.getColumnPos() < 6)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+
+                columnList1 = column.stream()
+                        .filter(num -> num.getRowPos() >= 3 && num.getRowPos() < 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                columnList2 = column.stream()
+                        .filter(num -> num.getRowPos() < 3 && num.getRowPos() >= 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getColumnPos() != columnPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(columnList1, candidate) >= 2 &&
+                        !columnList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getColumn(columnPos).stream()
+                            .filter(num -> num.getRowPos() < 3 && num.getRowPos() >= 6)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+                break;
+            case 6:
+                rowList1 = row.stream()
+                        .filter(num -> num.getColumnPos() < 3)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                rowList2 = row.stream()
+                        .filter(num -> num.getColumnPos() >= 3)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getRowPos() != rowPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(rowList1, candidate) >= 2 &&
+                        !rowList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getRow(rowPos).stream()
+                            .filter(num -> num.getColumnPos() >= 3)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+
+                columnList1 = column.stream()
+                        .filter(num -> num.getRowPos() >= 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                columnList2 = column.stream()
+                        .filter(num -> num.getRowPos() < 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getColumnPos() != columnPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(columnList1, candidate) >= 2 &&
+                        !columnList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getColumn(columnPos).stream()
+                            .filter(num -> num.getRowPos() < 6)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+                break;
+            case 7:
+                rowList1 = row.stream()
+                        .filter(num -> num.getColumnPos() >= 3 && num.getColumnPos() < 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                rowList2 = row.stream()
+                        .filter(num -> num.getColumnPos() < 3 && num.getColumnPos() >= 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getRowPos() != rowPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(rowList1, candidate) >= 2 &&
+                        !rowList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getRow(rowPos).stream()
+                            .filter(num -> num.getColumnPos() < 3 && num.getColumnPos() >= 6)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+
+                columnList1 = column.stream()
+                        .filter(num -> num.getRowPos() >= 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                columnList2 = column.stream()
+                        .filter(num -> num.getRowPos() < 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getColumnPos() != columnPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(columnList1, candidate) >= 2 &&
+                        !columnList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getColumn(columnPos).stream()
+                            .filter(num -> num.getRowPos() < 6)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+                break;
+            case 8:
+                rowList1 = row.stream()
+                        .filter(num -> num.getColumnPos() >= 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                rowList2 = row.stream()
+                        .filter(num -> num.getColumnPos() < 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getRowPos() != rowPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(rowList1, candidate) >= 2 &&
+                        !rowList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getRow(rowPos).stream()
+                            .filter(num -> num.getColumnPos() < 6)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+
+                columnList1 = column.stream()
+                        .filter(num -> num.getRowPos() >= 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                columnList2 = column.stream()
+                        .filter(num -> num.getRowPos() < 6)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+                boxList = box.stream()
+                        .filter(num -> num.getColumnPos() != columnPos)
+                        .map(num -> num.getCandidates())
+                        .flatMap(i -> i.stream())
+                        .collect(Collectors.toList());
+
+                if (Collections.frequency(columnList1, candidate) >= 2 &&
+                        !columnList2.contains(candidate) &&
+                        !boxList.contains(candidate)) {
+                    this.getColumn(columnPos).stream()
+                            .filter(num -> num.getRowPos() < 6)
+                            .forEach(num -> num.deleteFromCandidates(candidate));
+                }
+                break;
+        }
     }
 }

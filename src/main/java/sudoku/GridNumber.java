@@ -25,6 +25,10 @@ public class GridNumber {
         this.columnPos = column;
     }
 
+    void deleteFromCandidates(Integer candidate){
+        while(candidates.remove(candidate)){}
+    }
+
     @Override
     public String toString(){
         if(fixed == 0){
