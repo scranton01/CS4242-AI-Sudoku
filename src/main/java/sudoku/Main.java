@@ -14,7 +14,7 @@ public class Main {
         printBanner();
         String input;
         A: while(true) {
-            System.out.println("type number from 1 to 5 to select the puzzle, or type 'q' to quit this program");
+            System.out.println("type number from 1 to 8 to select the puzzle, or type 'q' to quit this program");
             System.out.println("1: easyPuzzle1");
             System.out.println("2: easyPuzzle2");
             System.out.println("3: easyPuzzle3");
@@ -22,6 +22,7 @@ public class Main {
             System.out.println("5: easyPuzzle5");
             System.out.println("6: mediumPuzzle1");
             System.out.println("7: mediumPuzzle2");
+            System.out.println("8: hardPuzzle1");
             Scanner in = new Scanner(System.in);
             input = in.next();
             String csvFile ="";
@@ -46,6 +47,9 @@ public class Main {
                     break;
                 case "7":
                     csvFile = "mediumPuzzle2.csv";
+                    break;
+                case "8":
+                    csvFile = "hardPuzzle1.csv";
                     break;
                 case "q":
                     break A;
@@ -75,6 +79,6 @@ public class Main {
                 " \\_____  \\ /  _ \\|  |\\  \\/ // __ \\_  __ \\\n" +
                 " /        (  <_> )  |_\\   /\\  ___/|  | \\/\n" +
                 "/_______  /\\____/|____/\\_/  \\___  >__|   \n" +
-                "        \\/                      \\/         ver1.2");
+                "        \\/                      \\/         ver1.3");
     }
 }

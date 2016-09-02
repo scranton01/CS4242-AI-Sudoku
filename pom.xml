@@ -6,7 +6,7 @@
 
     <groupId>kennesawstate.cs4242.ai</groupId>
     <artifactId>sudoku</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.3-SNAPSHOT</version>
 
     <dependencies>
         <dependency>
