@@ -165,7 +165,7 @@ public class Table {
                 candidate.getAndIncrement();
             }
 //           added from ver 1.2
-//            updateCandidates();
+            updateCandidates();
 
             candidate.set(1);
             A:
